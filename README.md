@@ -1,1 +1,7 @@
 # DL_Additive
+
+generated_molecules.csv是生成的分子
+
+generated_molecules_with_SAscore.csv是生成的分子带SAscore
+
+generated_molecules_with_SAscore_with_tSNE.csv是生成的分子带SAscore，带t-SNE降维信息
