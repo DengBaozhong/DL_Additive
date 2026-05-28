@@ -7,12 +7,12 @@
 对每个核心片段，枚举其 K 个锚点上所有可能的取代基排列（`itertools.product`，可重复选取），
 每个组合只尝试一次，零浪费。连接策略为确定性：取代基按 tuple 顺序依次连接到当前分子的第一个可用锚点。
 
-**封端策略**（取代基自带的额外连接点）：
-- **全枚举**（$S^K \le$ 上限）：使用默认取代基封端，保证确定性。
-- **非全枚举**（$S^K \gt$ 上限）：封端取代基**随机选取**（种子固定），在采样空间中增加结构多样性。
+**枚举策略**（基于组合数 $S^K$ 与阈值的比较）：
+- **全枚举**（$S^K \le$ `EXHAUSTIVE_LIMIT`）：遍历所有 $S^K$ 种组合，保证完整覆盖。
+- **随机采样**（$S^K \gt$ `EXHAUSTIVE_LIMIT`）：固定随机种子采样 `SAMPLING_BUDGET` 个不重复组合，兼顾大空间的探索。
 
-- 枚举空间 = $S^K$（$S$=取代基种类数，$K$=核心锚点数），受 `SYSTEMATIC_MAX_COMBOS_PER_CORE` 上限约束
-- 全枚举时效率 ≈ 100%，非全枚举时因随机封端可能引入少量重复
+- 枚举空间 = $S^K$（$S$=取代基种类数，$K$=核心锚点数）
+- 全枚举时效率 ≈ 100%，随机采样时效率取决于空间大小与预算比例
 
 ---
 
@@ -37,13 +37,13 @@ python additive_molecule_generation.py
 |------|--------|------|
 | `NUM_WORKERS` | `None` | 并行进程数，`None` = 自动（不超过核心类型数） |
 
-### 枚举参数
+### 枚举 / 采样参数
 
 | 参数 | 默认值 | 说明 |
 |------|--------|------|
-| `SYSTEMATIC_MAX_COMBOS_PER_CORE` | `200000` | 每个核心最多枚举的组合数 |
-| `SYSTEMATIC_DEFAULT_SUB_IDX` | `0` | 封端余量锚点的默认取代基索引（仅全枚举时使用） |
-| `RANDOM_SEED` | `42` | 随机种子，用于非全枚举时的封端取代基随机化（保证可复现） |
+| `EXHAUSTIVE_LIMIT` | `10000` | 全枚举上限：组合数 ≤ 此值时全枚举；超过则随机采样 |
+| `SAMPLING_BUDGET` | `2000` | 随机采样时的尝试次数 |
+| `RANDOM_SEED` | `42` | 随机种子（保证可复现） |
 
 ### 输入输出
 
@@ -59,11 +59,13 @@ python additive_molecule_generation.py
 
 | 文件 | 说明 |
 |------|------|
-| `additive_molecule_generation.py` | 主生成脚本（配置集中管理、多进程系统枚举） |
-| `Cores.csv` | 核心片段库（UTF-8，~3,046 条去重） |
-| `Substituents.csv` | 取代基片段库（UTF-8，10 条） |
+| `additive_molecule_generation.py` | 主生成脚本（配置集中管理、多进程枚举/采样） |
+| `check_molecule_pattern.py` | 分子模式验证脚本（五步漏斗法检查生成结果是否收敛到预期最优模式） |
+| `find_matching_smiles.py` | SMILES 等价匹配脚本（两阶段：字符预筛 + RDKit 规范化比较） |
+| `Cores.csv` | 核心片段库（UTF-8 BOM，~3,046 条去重） |
+| `Substituents.csv` | 取代基片段库（UTF-8 BOM，10 条） |
 | `generated_molecules.csv` | 生成结果输出 |
-| `find_matching_smiles.py` | SMILES 匹配查找脚本 |
+| `pattern_check_output/` | 模式验证的输出图表（PCE 分布图 + 漏斗组合图） |
 
 
 ---
